@@ -1,3 +1,1 @@
-<?php $name = $request->query->get('name', 'World'); ?>
-
-Hello, <?= htmlspecialchars($name, encoding: 'UTF-8') ?>
+Hello, <?= htmlspecialchars($name ?? 'World', encoding: 'UTF-8') ?>

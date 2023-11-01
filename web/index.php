@@ -4,26 +4,30 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Matcher\UrlMatcher;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 
 define('PAGES_DIR', __DIR__ . '/../src/pages/');
 
 $request = Request::createFromGlobals();
-$response = new Response();
 
-$path = $request->getPathInfo();
+$routes = require_once __DIR__ . '/../src/routes.php';
+$context = new RequestContext();
+$context->fromRequest($request);
+$matcher = new UrlMatcher($routes, $context);
 
-$map = [
-    '/hello' => PAGES_DIR . 'hello.php',
-    '/goodbay' => PAGES_DIR . 'goodbay.php',
-];
-
-if (isset($map[$path])) {
+try {
+    $path = $request->getPathInfo();
+    $attributes = $matcher->match($path);
     ob_start();
-    include $map[$path];
-    $response->setContent(ob_get_clean());
-} else {
-    $response->setContent('Page not found');
-    $response->setStatusCode(404);
+    extract($attributes, EXTR_SKIP);
+    include PAGES_DIR . $_route . '.php';
+    $response = new Response(ob_get_clean());
+} catch (ResourceNotFoundException $ex) {
+    $response = new Response('Page not found', 404);
+} catch (Exception $ex) {
+    $response = new Response('An error occured', 500);
 }
 
 $response->send();
