@@ -7,20 +7,27 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\HttpKernel\Controller\ControllerResolver;
+use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
 
 define('PAGES_DIR', __DIR__ . '/../src/pages/');
 
 $request = Request::createFromGlobals();
 $routes = require_once __DIR__ . '/../src/app.php';
+
 $context = new RequestContext();
 $context->fromRequest($request);
 $matcher = new UrlMatcher($routes, $context);
 
+$controllerResolver = new ControllerResolver();
+$argumentResolver = new ArgumentResolver();
+
 try {
     $attributes = $matcher->match($request->getPathInfo());
     $request->attributes->add($attributes);
-    $controller = $request->attributes->get('_controller');
-    $response = call_user_func($controller, $request);
+    $controller = $controllerResolver->getController($request);
+    $arguments = $argumentResolver->getArguments($request, $controller);
+    $response = call_user_func_array($controller, $arguments);
 } catch (ResourceNotFoundException $ex) {
     $response = new Response('Page not found', 404);
 } catch (Exception $ex) {
