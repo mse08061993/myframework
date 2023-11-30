@@ -13,8 +13,13 @@ class LeapYearController
         $leapYear = new LeapYear();
         $year = $request->attributes->get('year');
         if ($leapYear->isLeapYear($year)) {
-            return new Response('Yes, the year is leap');
+            $response = new Response('Yes, the year is leap');
+        } else {
+            $response = new Response('No, the year is not leap.'.rand());
         }
-        return new Response('No, the year is not leap');
+
+        $response->setTtl(10);
+
+        return $response;
     }
 }
